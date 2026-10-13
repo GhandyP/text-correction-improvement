@@ -90,6 +90,7 @@ Commit identities are recorded as evidence once each task lands; they are never 
 | T8 | Publish: `gh repo create --public`, `origin`, push, verify visibility and that the remote tree equals local `HEAD` | S3 | inline | `75360e8` |
 | T9 | Close: RDD assess over the candidate, execute its plan, final report with the risk line | S1-S12 | assess | `review-03d8840dc12df998` |
 | T10 | Bounded correction of the native finding `R3-001`: protected tokens verified byte for byte | S8, S11 | inline | `f2649d7` |
+| T11 | Advisory `R4-001`: every output write is checked, so a truncated delivery cannot exit 0 | S7, S9 | inline | `660d95a` |
 
 Every task closes with at least one work-unit commit on `main`. Tests and docs land alongside the
 behavior they describe. The push in T8 is authorized by S3; opening pull requests is not.
@@ -268,3 +269,33 @@ provider-issued acknowledgement was executed, and the authority is burned
 One advisory, non-blocking finding remains for later work: `R4-001` (resilience, WARNING,
 informational, `internal/cli/cli.go:168-169`); the closure states it must never reopen this candidate.
 Delivery follows ordinary repository policy; the public repository is at the corrected revision.
+
+L27 — evidence (T11, advisory R4-001). The literal claim of the advisory finding is not retrievable:
+the local gentle-ai store kept only the terminal-consumption receipt for the lineage
+(`.git/gentle-ai/review-transactions/terminal-consumption/v1/5a6b4e98...`), and no reviewer artifact
+with the text exists under `.git/gentle-ai` or `~/.gentle-ai`. What the recorded location does show is
+a real defect: `internal/cli/cli.go:168-169` was the report loop, and every write in `emit` discarded
+its error, so a full disk or a closed pipe silently truncated the draft or the report while the run
+exited 0. Fix: `emit` and `writeJSON` return their errors, `writeText` maps a failed write to
+`output_write_failed`, and `Run` exits 1 when the draft or the report did not reach the caller; the
+draft is still written first, and the failure report itself stays best-effort because the writer that
+just failed is stderr. RED was observed as the three new tests failing with exit 0 against a failing
+writer; GREEN after the change, with build, vet and gofmt clean and 80 test functions. Commit
+`660d95a`, pushed with the remote at the same revision.
+
+L28 — evidence (assess after T11). RDD assess over the committed range `f2649d7..660d95a` reports
+medium risk (native reason `executable_change` on `internal/cli/cli.go`, 6 paths, 166 changed lines),
+`reviewDue: false` (`under_budget`), and the plan is writer self-verification only with no separate
+verifier. That plan is already satisfied: no new lineage was started, because review was not due and
+the user did not ask for one on this candidate.
+
+L29 — evidence (user request). The inherited cookbook copy
+(`adk-go-enterprise-cookbook/casos/09-text-correction-improvement`, worktree root
+`/home/ghandy/Documents/P1_proyecticos`, remote `GhandyP/proyecticos`, private) was deleted at the
+user's request. Both files were tracked — `README.md` and `main.go`, last touched by commit
+`b9b44a6` — so `git -C /home/ghandy/Documents/P1_proyecticos/adk-go-enterprise-cookbook restore
+casos/09-text-correction-improvement` recovers them. The deletion is left uncommitted in that
+repository because committing there was not requested; 79 case directories remain. The case entry in
+`instagram_assets/manifest.json` carries metadata only (number, slug, title, goal) and references no
+file inside the deleted directory, so it is unaffected. A first `rm -rf` targeted a path that does not
+exist at the `proyecticos` root and deleted nothing; the real path was verified before the deletion.
