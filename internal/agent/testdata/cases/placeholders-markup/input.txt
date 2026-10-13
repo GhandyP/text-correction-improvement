@@ -1,0 +1,1 @@
+Estimado {{nombre}}, su pedido %s llegó a <b>Buenos Aires</b> y sera procesado mañana.

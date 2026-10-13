@@ -1,0 +1,7 @@
+{
+  "corrected": "Estimado {{nombre}}, su pedido %s llegó a <b>Buenos Aires</b> y será procesado mañana.",
+  "changes": [
+    {"kind": "spelling", "original": "sera", "revised": "será", "reason": "missing accent on the future tense"}
+  ],
+  "questions": []
+}

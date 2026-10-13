@@ -1,0 +1,7 @@
+{
+  "corrected": "El reporte dice: \"the meeting was postponed\" y falta actualizar la sección 2.",
+  "changes": [
+    {"kind": "spelling", "original": "seccion", "revised": "sección", "reason": "missing accent; the quoted English stays untouched"}
+  ],
+  "questions": []
+}

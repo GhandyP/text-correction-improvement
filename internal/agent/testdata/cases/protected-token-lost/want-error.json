@@ -1,0 +1,4 @@
+{
+  "code": "unverified_draft",
+  "findings": ["protected_token_lost"]
+}

@@ -1,0 +1,7 @@
+{
+  "language": "es",
+  "audience": "cliente",
+  "preserveVoice": true,
+  "level": "minimal",
+  "protectedTokens": ["{{nombre}}", "%s", "<b>Buenos Aires</b>"]
+}

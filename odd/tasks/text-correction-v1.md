@@ -84,7 +84,7 @@ Commit identities are recorded as evidence once each task lands; they are never 
 | T2 | `internal/correction`: contract types, closed change-kind set, typed validation, deterministic `Verify` (provenance, protected tokens, empty draft) with RED tests | S8, S10, S11 | inline | `4f32cf1` |
 | T3 | Response schema plus strict JSON decode (unknown and missing fields rejected) with RED tests | S7, S11 | inline | `7f0bdd7` |
 | T4 | `internal/agent`: ADK Go v2 Gemini agent, one document per session, no tools, injectable generate seam, instruction contract tests, `adk/v2` pinned | S2, S7, S11 | inline | `681bce8` |
-| T5 | `internal/cli`: flags (`-file`, `-json`, `-language`, `-audience`, `-level`, `-protect`, `-model`), stdin/file/argument input, text and JSON output, exit codes, RED tests | S7, S8, S10 | inline | pending |
+| T5 | `internal/cli`: flags (`-file`, `-json`, `-language`, `-audience`, `-level`, `-protect`, `-model`), stdin/file/argument input, text and JSON output, exit codes, RED tests | S7, S8, S10 | inline | `444fecc` |
 | T6 | Fixtures and golden model responses: already-correct no-op, informal voice, markup and placeholders, multilingual, lost protected token | S8, S10, S11 | inline | pending |
 | T7 | Honest README rewrite, Makefile, CI workflow (gofmt, vet, build, test), CHANGELOG | S4, S8, S9 | inline | pending |
 | T8 | Publish: `gh repo create --public`, `origin`, push, verify visibility and that the remote tree equals local `HEAD` | S3 | inline | pending |
@@ -206,3 +206,20 @@ blocked draft, 2 usage error or invalid request. In text mode stdout carries onl
 the report goes to stderr; in JSON mode the success payload is the same contract shape the model
 returns, and failures print one error object on stderr, so stdout never carries something that is not
 a verified draft.
+
+L19 — evidence (T5). Commit `444fecc`. RED was observed as `no non-test Go files in
+.../internal/cli`. GREEN as `ok .../internal/cli` with 17 test functions, and the full suite reports
+74 test functions across the three packages with `go build ./...`, `go vet ./...` and `gofmt -l .`
+clean. Smoke tests on the built binary: no credential → `missing_api_key` and exit 1; `-h` → usage on
+stdout and exit 0; `-level bogus` → `usage error: unknown level "bogus"; use minimal or moderate`
+and exit 2.
+
+L20 — evidence (T6). Six cases live in `internal/agent/testdata/cases`: already-correct,
+informal-voice (the guide's fast test: spelling, agreement, and a deliberate informal phrase),
+placeholders-markup, multilingual, ambiguous-tone, and protected-token-lost as the one blocked case.
+Each replay builds the request from `input.txt` and `request.json`, feeds `model.json` through the
+real pipeline with an injected generator, and compares the verified draft against `want.json`,
+which the strict decoder re-reads so no fixture can describe a draft the pipeline could not have
+produced. The first run failed on placeholders-markup because `printf` had eaten the `%s` while the
+fixture was being written; the pipeline rejected the request with `protected_token_not_in_text`,
+which is the test doing its job on its own fixture. Fixed, then the whole suite is green.

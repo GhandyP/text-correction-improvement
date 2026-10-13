@@ -1,0 +1,7 @@
+{
+  "corrected": "El pedido salió ayer a la tarde.",
+  "changes": [
+    {"kind": "spelling", "original": "salio", "revised": "salió", "reason": "missing accent on the past tense"}
+  ],
+  "questions": []
+}

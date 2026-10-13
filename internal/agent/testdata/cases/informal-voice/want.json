@@ -1,0 +1,8 @@
+{
+  "corrected": "Che, mirá, ayer nos fuimos a lo del tío y el nene corrió rapidísimo, viste? No sabés cómo lo pasamos.",
+  "changes": [
+    {"kind": "grammar", "original": "fuimo", "revised": "fuimos", "reason": "missing final s in the first person plural"},
+    {"kind": "spelling", "original": "corrio", "revised": "corrió", "reason": "missing accent on the past tense"}
+  ],
+  "questions": []
+}
