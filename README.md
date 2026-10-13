@@ -9,17 +9,24 @@ task lands as one work-unit commit on `main`.
 
 ## Status
 
-Early development. The module is standalone; the correction contract, the ADK agent, and the CLI
-land task by task. Until T5 lands there is no working command, and this README says so instead of
-pretending otherwise.
+The command works end to end when a Gemini key is available: `internal/correction` holds the
+contract and the deterministic checks, `internal/agent` runs the Google ADK Go v2 Gemini agent, and
+`internal/cli` reads the text and prints the draft. Verifying against a live model is a manual step;
+the automated suite covers everything except the model call itself.
+
+```bash
+export GOOGLE_API_KEY="your-key"
+go run . -file draft.txt          # the draft goes to stdout, the report to stderr
+echo "Mira, el nene corrio." | go run . -json
+```
 
 | Task | Deliverable | State |
 | --- | --- | --- |
-| T1 | Standalone module (`go.mod`, LICENSE, `.gitignore`) | this commit |
-| T2 | `internal/correction`: contract and deterministic verification | pending |
-| T3 | Response schema and strict JSON decode | pending |
-| T4 | `internal/agent`: Google ADK Go v2 Gemini agent | pending |
-| T5 | `internal/cli`: flags, JSON output, exit codes | pending |
+| T1 | Standalone module (`go.mod`, LICENSE, `.gitignore`) | done |
+| T2 | `internal/correction`: contract and deterministic verification | done |
+| T3 | Response schema and strict JSON decode | done |
+| T4 | `internal/agent`: Google ADK Go v2 Gemini agent | done |
+| T5 | `internal/cli`: flags, JSON output, exit codes | done |
 | T6 | Fixtures and golden model responses | pending |
 | T7 | README, Makefile, CI, CHANGELOG | pending |
 

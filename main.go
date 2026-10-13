@@ -1,17 +1,22 @@
 // Command text-correction-improvement corrects a supplied text and reports what
 // changed, why it changed, and which protected tokens survived.
 //
-// The CLI is wired incrementally by the tasks described in
-// odd/tasks/text-correction-v1.md. Until T5 lands, this command reports that it
-// is not wired yet instead of pretending to work.
+// Usage and exit codes are documented in the help text and in
+// odd/tasks/text-correction-v1.md.
 package main
 
 import (
-	"fmt"
+	"context"
 	"os"
+
+	"github.com/GhandyP/text-correction-improvement/internal/agent"
+	"github.com/GhandyP/text-correction-improvement/internal/cli"
 )
 
 func main() {
-	fmt.Fprintln(os.Stderr, "text-correction-improvement: not wired yet; see odd/tasks/text-correction-v1.md")
-	os.Exit(2)
+	os.Exit(cli.Run(context.Background(), build, os.Args[1:], os.Stdin, os.Stdout, os.Stderr))
+}
+
+func build(ctx context.Context, model string) (cli.Corrector, error) {
+	return agent.New(ctx, agent.Config{Model: model})
 }

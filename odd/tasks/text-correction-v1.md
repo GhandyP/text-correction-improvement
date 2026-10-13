@@ -82,8 +82,8 @@ Commit identities are recorded as evidence once each task lands; they are never 
 | T0 | ODD tracking: independent `git init` here, inherited-state commit, this document | S1, S4, S5 | inline | `f54f1d5` |
 | T1 | Reset: drop the inherited prototype, MIT LICENSE, `.gitignore`, own `go.mod`, `main.go` that compiles without `internal/adkhelper`, honest README | S1, S5, S6 | inline | `cbdd0a3` |
 | T2 | `internal/correction`: contract types, closed change-kind set, typed validation, deterministic `Verify` (provenance, protected tokens, empty draft) with RED tests | S8, S10, S11 | inline | `4f32cf1` |
-| T3 | Response schema plus strict JSON decode (unknown and missing fields rejected) with RED tests | S7, S11 | inline | pending |
-| T4 | `internal/agent`: ADK Go v2 Gemini agent, one document per session, no tools, injectable generate seam, instruction contract tests, `adk/v2` pinned | S2, S7, S11 | inline | pending |
+| T3 | Response schema plus strict JSON decode (unknown and missing fields rejected) with RED tests | S7, S11 | inline | `7f0bdd7` |
+| T4 | `internal/agent`: ADK Go v2 Gemini agent, one document per session, no tools, injectable generate seam, instruction contract tests, `adk/v2` pinned | S2, S7, S11 | inline | `681bce8` |
 | T5 | `internal/cli`: flags (`-file`, `-json`, `-language`, `-audience`, `-level`, `-protect`, `-model`), stdin/file/argument input, text and JSON output, exit codes, RED tests | S7, S8, S10 | inline | pending |
 | T6 | Fixtures and golden model responses: already-correct no-op, informal voice, markup and placeholders, multilingual, lost protected token | S8, S10, S11 | inline | pending |
 | T7 | Honest README rewrite, Makefile, CI workflow (gofmt, vet, build, test), CHANGELOG | S4, S8, S9 | inline | pending |
@@ -177,3 +177,32 @@ exit 1. GREEN as `ok .../internal/agent` plus `ok .../internal/correction`, 41 t
 both packages; `go build ./...`, `go vet ./...` and `gofmt -l .` all clean. One test was rewritten
 before GREEN: the case-drift case expected `unknown_field`, but completeness is checked first by
 design, so it now expects `missing_field` and asserts that the detail names both spellings.
+
+L16 — decision (T4). The ADK wiring lives entirely inside one closure built by `newGeminiGenerator`:
+the Gemini model, a single `llmagent` with the response schema and MIME type set, an in-memory ADK
+runner with session auto-creation, and a fresh session id per request so one document never sees
+another's state. `New` fails fast with `missing_api_key` when no credential is configured and no
+generator is injected, so a missing key is a construction error rather than a failed first call.
+`Correct` runs one direction only — validate, generate, decode, verify — and returns `BlockedError`
+instead of a draft when verification finds anything. The ADK `console`/`web` launcher is not used:
+the runner is driven directly, and thought parts are excluded when the answer text is collected.
+
+L17 — evidence (T4). RED was observed as a build failure listing the undefined symbols
+(`agent.GenerateFunc`, `agent.New`, `agent.Config`, `agent.DefaultModel`, `agent.Agent`,
+`correction.CodeMissingAPIKey`), exit 1. GREEN as `ok .../internal/agent` with 31 test functions
+passing; `go build ./...`, `go vet ./...` and `gofmt -l .` clean. The first GREEN run surfaced three
+real defects, all fixed before the commit: `BlockedError` was defined in the agent package but
+belongs to the contract vocabulary, so it moved to `internal/correction`; the blocked-draft fixture
+legitimately produces two findings (lost protected token and unexplained draft) and the test now
+asserts both in stable order; and the schema test compared an ordered key list against a sorted one.
+`go.mod` now pins `google.golang.org/adk/v2 v2.6.0` and `google.golang.org/genai v1.74.0` as direct
+dependencies. Local builds run with `GOPROXY=off` because this machine cannot reach
+`proxy.golang.org` reliably and the module cache is complete; CI uses the normal proxy.
+
+L18 — decision (T5). The CLI never imports the agent: it depends on a two-method seam (`Corrector`,
+`BuildFunc`), so its tests run against a fake with no ADK in the test binary, and `main.go` is the
+only place that wires ADK to the command. Exit codes are contract: 0 verified draft, 1 failed run or
+blocked draft, 2 usage error or invalid request. In text mode stdout carries only the deliverable and
+the report goes to stderr; in JSON mode the success payload is the same contract shape the model
+returns, and failures print one error object on stderr, so stdout never carries something that is not
+a verified draft.
