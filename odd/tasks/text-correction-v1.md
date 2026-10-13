@@ -81,7 +81,7 @@ Commit identities are recorded as evidence once each task lands; they are never 
 | --- | --- | --- | --- | --- |
 | T0 | ODD tracking: independent `git init` here, inherited-state commit, this document | S1, S4, S5 | inline | `f54f1d5` |
 | T1 | Reset: drop the inherited prototype, MIT LICENSE, `.gitignore`, own `go.mod`, `main.go` that compiles without `internal/adkhelper`, honest README | S1, S5, S6 | inline | `cbdd0a3` |
-| T2 | `internal/correction`: contract types, closed change-kind set, typed validation, deterministic `Verify` (provenance, protected tokens, empty draft) with RED tests | S8, S10, S11 | inline | pending |
+| T2 | `internal/correction`: contract types, closed change-kind set, typed validation, deterministic `Verify` (provenance, protected tokens, empty draft) with RED tests | S8, S10, S11 | inline | `4f32cf1` |
 | T3 | Response schema plus strict JSON decode (unknown and missing fields rejected) with RED tests | S7, S11 | inline | pending |
 | T4 | `internal/agent`: ADK Go v2 Gemini agent, one document per session, no tools, injectable generate seam, instruction contract tests, `adk/v2` pinned | S2, S7, S11 | inline | pending |
 | T5 | `internal/cli`: flags (`-file`, `-json`, `-language`, `-audience`, `-level`, `-protect`, `-model`), stdin/file/argument input, text and JSON output, exit codes, RED tests | S7, S8, S10 | inline | pending |
@@ -157,3 +157,23 @@ were clean; `go list -m` reports `github.com/GhandyP/text-correction-improvement
 `.gitignore`, `LICENSE`, `README.md`, `go.mod`, `main.go` and this document. `go run .` prints
 "text-correction-improvement: not wired yet; see odd/tasks/text-correction-v1.md" and exits 2, so no
 commit claims a working CLI before T5.
+
+L13 — evidence (T2). Commit `4f32cf1`. RED was observed as `no non-test Go files in
+.../internal/correction [build failed]`, exit 1. GREEN as
+`ok github.com/GhandyP/text-correction-improvement/internal/correction` with 26 test functions;
+`go build ./...`, `go vet ./...` and `gofmt -l .` all clean. One fixture was corrected before GREEN
+rather than after: the stale-changes test listed accented revisions while handing `Verify` the
+unaccented source as the draft, so it was asserting three extra findings of its own making; the
+fixture now lists one locatable no-op change, leaving staleness as the only problem.
+
+L14 — decision (T3). The response decoder is deliberately narrower than a tolerant JSON reader:
+one object, exact key spellings, every key required, no trailing content, no markdown fence, and
+explicit `null` treated as missing. `corrected`, `changes` and `questions` and the four change keys
+live in one place shared with the response schema so the two cannot drift; a case-drifted key
+reports both the required name and the one received.
+
+L15 — evidence (T3). RED was observed as `no non-test Go files in .../internal/agent [build failed]`,
+exit 1. GREEN as `ok .../internal/agent` plus `ok .../internal/correction`, 41 test functions across
+both packages; `go build ./...`, `go vet ./...` and `gofmt -l .` all clean. One test was rewritten
+before GREEN: the case-drift case expected `unknown_field`, but completeness is checked first by
+design, so it now expects `missing_field` and asserts that the detail names both spellings.

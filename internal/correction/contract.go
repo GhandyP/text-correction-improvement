@@ -106,6 +106,13 @@ const (
 	CodeEmptyQuestion        Code = "empty_question"
 )
 
+// Model response decode codes.
+const (
+	CodeInvalidJSON  Code = "invalid_json"
+	CodeUnknownField Code = "unknown_field"
+	CodeMissingField Code = "missing_field"
+)
+
 // Error is a typed validation failure. Every error carries a Code for callers
 // and a Detail for humans, and the rendered message always names the code.
 type Error struct {
