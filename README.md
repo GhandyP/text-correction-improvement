@@ -1,68 +1,40 @@
-# 09 — Correct and improve text
+# text-correction-improvement
 
-## Goal
+Correct supplied text while preserving its meaning, voice, intended audience, and requested level of
+change.
 
-Correct supplied text while preserving its meaning, voice, intended audience, and requested level of change.
+This repository is an independent Go project built with **Organic Driven Development**: the task
+plan in [`odd/tasks/text-correction-v1.md`](odd/tasks/text-correction-v1.md) is the spec, and each
+task lands as one work-unit commit on `main`.
 
-## Run the current prototype
+## Status
 
-From this case directory:
+Early development. The module is standalone; the correction contract, the ADK agent, and the CLI
+land task by task. Until T5 lands there is no working command, and this README says so instead of
+pretending otherwise.
 
-```bash
-export GOOGLE_API_KEY="your-key"
-go run .
-```
+| Task | Deliverable | State |
+| --- | --- | --- |
+| T1 | Standalone module (`go.mod`, LICENSE, `.gitignore`) | this commit |
+| T2 | `internal/correction`: contract and deterministic verification | pending |
+| T3 | Response schema and strict JSON decode | pending |
+| T4 | `internal/agent`: Google ADK Go v2 Gemini agent | pending |
+| T5 | `internal/cli`: flags, JSON output, exit codes | pending |
+| T6 | Fixtures and golden model responses | pending |
+| T7 | README, Makefile, CI, CHANGELOG | pending |
 
-`internal/adkhelper.Run` uses ADK Go v2.2.0, Gemini, and `gemini-flash-latest`; set `ADK_MODEL` to override the model.
+## Environment
 
-Sample prompt:
+The default model is `gemini-flash-latest` through Google ADK Go v2; set `ADK_MODEL` to override it
+and `GOOGLE_API_KEY` to authenticate. The key is read from the environment and never written to
+disk. Do not commit `.env` files; `.gitignore` already excludes them.
 
-```text
-Correct this paragraph while preserving its informal voice.
-```
+## Scope
 
-## What exists now
+The tool corrects text and reports what changed and why. It never writes, replaces, or publishes a
+document: the draft and its findings go to stdout so a human reviews the diff before using it. See
+the non-goals in the task plan.
 
-- `main.go (exists)` passes user text and instructions to one focused Gemini ADK agent.
-- The result is free-form revised text; changed spans, preserved placeholders, language, and correction reasons are not machine-readable.
-- This is intentionally text-only: it has no editor integration, glossary, document store, or automatic publish action.
+## License
 
-## Missing elements
-
-- **Contract:** Define `CorrectionInput{text, language, audience, style, protectedTokens[]}` -> `CorrectionResult{revisedText, changes[], preservedTokens[], warnings[]}`.
-- **ADK layer:** Add a response schema and document session; keep the agent instruction explicit about meaning preservation, with no function tool for the first slice.
-- **Domain boundary:** Add glossary/style-rule services and a diff renderer that can reject changes to protected tokens.
-- **Fixtures and validation:** Include grammar errors, informal voice, markup, placeholders, multilingual text, and already-correct input; compare golden diffs.
-- **Safety:** Keep revisions as drafts and require review before replacing a source document, especially for legal or customer-facing text.
-
-## Target structure
-
-```text
-09-text-correction-improvement/
-├── main.go (exists)
-├── README.md (exists)
-├── schema.go (next)
-├── corrector.go (next)
-├── diff.go (next)
-├── testdata/text.json (next)
-└── main_test.go (next)
-```
-
-## Implementation order
-
-1. Define protected tokens, style options, and the revision contract.
-2. Add schema validation and a session scoped to one document.
-3. Implement deterministic token protection and diff reporting.
-4. Test voice, markup, placeholders, languages, and no-op input.
-5. Add glossary lookup only after the draft diff is reviewable.
-
-## Done when
-
-- [ ] Meaning, protected tokens, markup, and requested voice survive correction tests.
-- [ ] Every change has a reason, and malformed output is rejected.
-- [ ] Golden fixtures cover no-op, multilingual, and placeholder cases.
-- [ ] Source replacement never happens without a human-approved diff.
-
-## Next improvement
-
-Introduce `CorrectionResult` and protected-token tests before adding style or editor integrations.
+MIT — see [LICENSE](LICENSE).
