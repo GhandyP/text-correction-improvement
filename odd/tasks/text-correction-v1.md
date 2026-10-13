@@ -87,7 +87,7 @@ Commit identities are recorded as evidence once each task lands; they are never 
 | T5 | `internal/cli`: flags (`-file`, `-json`, `-language`, `-audience`, `-level`, `-protect`, `-model`), stdin/file/argument input, text and JSON output, exit codes, RED tests | S7, S8, S10 | inline | `444fecc` |
 | T6 | Fixtures and golden model responses: already-correct no-op, informal voice, markup and placeholders, multilingual, lost protected token | S8, S10, S11 | inline | `d0aa640` |
 | T7 | Honest README rewrite, Makefile, CI workflow (gofmt, vet, build, test), CHANGELOG | S4, S8, S9 | inline | pending |
-| T8 | Publish: `gh repo create --public`, `origin`, push, verify visibility and that the remote tree equals local `HEAD` | S3 | inline | pending |
+| T8 | Publish: `gh repo create --public`, `origin`, push, verify visibility and that the remote tree equals local `HEAD` | S3 | inline | `75360e8` |
 | T9 | Close: RDD assess over the candidate, execute its plan, final report with the risk line | S1-S12 | assess | pending |
 
 Every task closes with at least one work-unit commit on `main`. Tests and docs land alongside the
@@ -234,3 +234,12 @@ L22 — evidence (T7). `make check` exited 0 with gofmt clean, vet clean, build 
 green; `.github/workflows/ci.yml` parses as YAML; the Makefile has 12 real tab-indented recipe lines.
 The first README draft showed a flag-after-text invocation that the Go `flag` package would reject as
 extra positional arguments; both the example and a new sentence now say flags come before the text.
+
+L23 — evidence (T8). The public repository was created with
+`gh repo create text-correction-improvement --public --source=. --remote=origin --push
+--description "Correct and improve text with a Google ADK Go (v2) Gemini agent, and verify every
+change deterministically in Go before printing the draft."`. `gh repo view` reports `visibility:
+PUBLIC`, default branch `main`, and the URL `https://github.com/GhandyP/text-correction-improvement`;
+`git remote -v` shows `origin` on that URL; `git ls-remote origin refs/heads/main` returns the local
+`HEAD` at the moment of the push, `75360e8`; the branch tracks `origin/main` and the tree is clean.
+No pull request was opened, because S3 asked for the repository, not for a review flow.
