@@ -80,7 +80,7 @@ Commit identities are recorded as evidence once each task lands; they are never 
 | ID | Task | Specs | Route | Commit |
 | --- | --- | --- | --- | --- |
 | T0 | ODD tracking: independent `git init` here, inherited-state commit, this document | S1, S4, S5 | inline | `f54f1d5` |
-| T1 | Reset: drop the inherited prototype, MIT LICENSE, `.gitignore`, own `go.mod`, `main.go` that compiles without `internal/adkhelper`, honest README | S1, S5, S6 | inline | pending |
+| T1 | Reset: drop the inherited prototype, MIT LICENSE, `.gitignore`, own `go.mod`, `main.go` that compiles without `internal/adkhelper`, honest README | S1, S5, S6 | inline | `cbdd0a3` |
 | T2 | `internal/correction`: contract types, closed change-kind set, typed validation, deterministic `Verify` (provenance, protected tokens, empty draft) with RED tests | S8, S10, S11 | inline | pending |
 | T3 | Response schema plus strict JSON decode (unknown and missing fields rejected) with RED tests | S7, S11 | inline | pending |
 | T4 | `internal/agent`: ADK Go v2 Gemini agent, one document per session, no tools, injectable generate seam, instruction contract tests, `adk/v2` pinned | S2, S7, S11 | inline | pending |
@@ -151,3 +151,9 @@ L11 — decision (T4). The agent is constructed behind one seam — the ADK call
 injected into `agent.Agent` — so tests exercise instruction, schema, decode, and verification with a
 fake generator and no network. A live Gemini call needs `GOOGLE_API_KEY` and stays out of CI;
 `testdata/model/*.json` carries the recorded-shape responses the golden tests replay.
+
+L12 — evidence (T1). Commit `cbdd0a3` on `main`. `go build ./...`, `go vet ./...` and `gofmt -l .`
+were clean; `go list -m` reports `github.com/GhandyP/text-correction-improvement`; tracked files are
+`.gitignore`, `LICENSE`, `README.md`, `go.mod`, `main.go` and this document. `go run .` prints
+"text-correction-improvement: not wired yet; see odd/tasks/text-correction-v1.md" and exits 2, so no
+commit claims a working CLI before T5.
