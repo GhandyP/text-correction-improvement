@@ -88,7 +88,8 @@ Commit identities are recorded as evidence once each task lands; they are never 
 | T6 | Fixtures and golden model responses: already-correct no-op, informal voice, markup and placeholders, multilingual, lost protected token | S8, S10, S11 | inline | `d0aa640` |
 | T7 | Honest README rewrite, Makefile, CI workflow (gofmt, vet, build, test), CHANGELOG | S4, S8, S9 | inline | pending |
 | T8 | Publish: `gh repo create --public`, `origin`, push, verify visibility and that the remote tree equals local `HEAD` | S3 | inline | `75360e8` |
-| T9 | Close: RDD assess over the candidate, execute its plan, final report with the risk line | S1-S12 | assess | pending |
+| T9 | Close: RDD assess over the candidate, execute its plan, final report with the risk line | S1-S12 | assess | `review-03d8840dc12df998` |
+| T10 | Bounded correction of the native finding `R3-001`: protected tokens verified byte for byte | S8, S11 | inline | `f2649d7` |
 
 Every task closes with at least one work-unit commit on `main`. Tests and docs land alongside the
 behavior they describe. The push in T8 is authorized by S3; opening pull requests is not.
@@ -243,3 +244,27 @@ PUBLIC`, default branch `main`, and the URL `https://github.com/GhandyP/text-cor
 `git remote -v` shows `origin` on that URL; `git ls-remote origin refs/heads/main` returns the local
 `HEAD` at the moment of the push, `75360e8`; the branch tracks `origin/main` and the tree is clean.
 No pull request was opened, because S3 asked for the repository, not for a review flow.
+
+L24 — evidence (T9, native review). RDD assess over the committed range `f54f1d5..91cd5e2` reported
+high risk — native signal `shell_source` in `.github/workflows/ci.yml` — and its plan required writer
+self-verification plus a separate independent verifier. The `gentle-ai-verify` subagent stalled and is
+reported unavailable, not retried. The native ordinary review of lineage `review-03d8840dc12df998`
+ran four lenses over the same frozen range (risk, resilience, readability, reliability); the refuter
+found one candidate-caused severe finding, `R3-001` (reliability, CRITICAL): protected tokens were
+checked with folded whitespace, so a token could change from the inside and still pass while the CLI
+reported success and delivered a draft that broke the preservation promise.
+
+L25 — evidence (T10). RED was observed as `TestValidateRequestRejectsAProtectedTokenBrokenByWhitespace`
+and `TestVerifyRejectsAProtectedTokenChangedInternally` failing against the folded implementation;
+GREEN after `ValidateRequest` requires the token to appear verbatim in the text and `Verify` requires
+it to appear verbatim in the draft, so only whitespace around a token may differ. Commit `f2649d7`,
+`make check` exit 0, pushed with the remote at the same revision. The declared correction plan was 80
+diff lines and the realized diff is 68 additions plus 21 deletions, 89 lines: an 11% overrun on the
+estimate, recorded because the plan was a plan and the difference is real.
+
+L26 — evidence (T9 close). The targeted validator approved the corrected candidate, the exact
+provider-issued acknowledgement was executed, and the authority is burned
+(`gentle-ai.review-acknowledged/v1`, consumed revision `sha256:b6533c9d15d6e98be5b545acfbd5d9ff4965dc0c994742e1252995eeccaa648b`).
+One advisory, non-blocking finding remains for later work: `R4-001` (resilience, WARNING,
+informational, `internal/cli/cli.go:168-169`); the closure states it must never reopen this candidate.
+Delivery follows ordinary repository policy; the public repository is at the corrected revision.
