@@ -101,8 +101,9 @@ A draft is delivered only when all of these hold. Anything else is a block, not 
   states a reason.
 - Both sides of a change appear literally — the original in the submitted text, the revised in the
   draft — compared with whitespace folded and case kept. A change nobody can locate is not a change.
-- Every protected token is present in the draft. A token missing from the submitted text is rejected
-  before the model is even called, because it protects nothing.
+- Every protected token is present in the draft byte for byte: a token that changes from the inside,
+  even by one space, is a block. A token missing from the submitted text is rejected before the model is
+  even called, because it protects nothing.
 - The change list explains the draft: a draft that differs with no changes listed is blocked, and so
   is a change list whose draft is identical to the source.
 - The model's answer is one JSON object with the exact keys, all of them present; unknown keys,

@@ -29,6 +29,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Security
 
+- Protected tokens are compared byte for byte, in the request and in the draft, so a token that changes
+  from the inside is blocked instead of delivered.
 - `GOOGLE_API_KEY` is read from the environment only, is never written to disk, and `.gitignore`
   excludes `.env` and token files.
 - A draft that fails verification is discarded: an unverified revision is never printed as if it had

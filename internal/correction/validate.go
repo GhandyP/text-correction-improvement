@@ -6,8 +6,9 @@ import (
 )
 
 // ValidateRequest rejects a request that cannot be corrected or verified,
-// returning the first failure as a typed *Error. A protected token must be
-// present in the text it is supposed to protect; otherwise it protects nothing.
+// returning the first failure as a typed *Error. A protected token is compared
+// byte for byte, so it must be present verbatim in the text it protects;
+// otherwise the draft check would block every answer.
 func ValidateRequest(req Request) error {
 	if strings.TrimSpace(req.Text) == "" {
 		return &Error{Code: CodeEmptyText, Detail: "the text to correct is empty"}
@@ -19,7 +20,6 @@ func ValidateRequest(req Request) error {
 		}
 	}
 
-	folded := foldText(req.Text)
 	seen := make(map[string]struct{}, len(req.ProtectedTokens))
 	for _, token := range req.ProtectedTokens {
 		trimmed := strings.TrimSpace(token)
@@ -27,19 +27,18 @@ func ValidateRequest(req Request) error {
 			return &Error{Code: CodeEmptyProtectedToken, Detail: "a protected token is empty"}
 		}
 
-		key := foldText(trimmed)
-		if _, duplicate := seen[key]; duplicate {
+		if _, duplicate := seen[trimmed]; duplicate {
 			return &Error{
 				Code:   CodeDuplicateProtectedToken,
 				Detail: fmt.Sprintf("protected token %q is repeated", trimmed),
 			}
 		}
-		seen[key] = struct{}{}
+		seen[trimmed] = struct{}{}
 
-		if !strings.Contains(folded, key) {
+		if !strings.Contains(req.Text, trimmed) {
 			return &Error{
 				Code:   CodeProtectedTokenNotInText,
-				Detail: fmt.Sprintf("protected token %q does not appear in the text, so it protects nothing", trimmed),
+				Detail: fmt.Sprintf("protected token %q does not appear verbatim in the text, so it protects nothing", trimmed),
 			}
 		}
 	}

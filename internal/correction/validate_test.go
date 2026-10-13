@@ -83,11 +83,20 @@ func TestValidateRequestRejectsProtectedTokenAbsentFromText(t *testing.T) {
 	requireErrorCode(t, correction.ValidateRequest(req), correction.CodeProtectedTokenNotInText)
 }
 
-func TestValidateRequestAcceptsProtectedTokenAcrossWhitespace(t *testing.T) {
+func TestValidateRequestRejectsAProtectedTokenBrokenByWhitespace(t *testing.T) {
 	req := wellFormedRequest()
-	req.Text = "Mira, el nene\n   corrio muy rapido."
-	req.ProtectedTokens = []string{"el nene corrio"}
+	req.Text = "Su pedido <b>Buenos  Aires</b> salio ayer."
+	req.ProtectedTokens = []string{"<b>Buenos Aires</b>"}
+
+	requireErrorCode(t, correction.ValidateRequest(req), correction.CodeProtectedTokenNotInText)
+}
+
+func TestValidateRequestAcceptsAProtectedTokenInAMultilineText(t *testing.T) {
+	req := wellFormedRequest()
+	req.Text = "Su pedido <b>Buenos Aires</b>\n  salio ayer."
+	req.ProtectedTokens = []string{"<b>Buenos Aires</b>"}
+
 	if err := correction.ValidateRequest(req); err != nil {
-		t.Fatalf("ValidateRequest() = %v, want nil: a protected token must survive a line-break change", err)
+		t.Fatalf("ValidateRequest() = %v, want nil: the token is present byte for byte", err)
 	}
 }

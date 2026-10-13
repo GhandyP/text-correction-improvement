@@ -25,11 +25,14 @@ func Verify(req Request, res Result) []Finding {
 		if trimmed == "" {
 			continue
 		}
-		if !strings.Contains(draft, foldText(trimmed)) {
+		// Verbatim means verbatim: the token is compared byte for byte against
+		// the raw draft, so a change inside the token is a lost token even when
+		// it survives whitespace folding.
+		if !strings.Contains(res.RevisedText, trimmed) {
 			findings = append(findings, Finding{
 				Code:        CodeProtectedTokenLost,
 				ChangeIndex: -1,
-				Detail:      fmt.Sprintf("protected token %q does not appear in the revised draft", trimmed),
+				Detail:      fmt.Sprintf("protected token %q does not appear verbatim in the revised draft", trimmed),
 			})
 		}
 	}

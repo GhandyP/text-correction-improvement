@@ -100,12 +100,45 @@ func TestVerifyReportsLostProtectedToken(t *testing.T) {
 	}
 }
 
-func TestVerifyAcceptsProtectedTokenAcrossWhitespace(t *testing.T) {
-	result := verifiedResult()
-	result.RevisedText = "Mira,   el nene corrió muy rápido ayer y el\n%s quedó intacto."
+func TestVerifyRejectsAProtectedTokenChangedInternally(t *testing.T) {
+	// A protected token must survive byte for byte. Verifying it with folded
+	// whitespace would let a token change from the inside and still pass.
+	req := correction.Request{
+		Text:            "Su pedido <b>Buenos Aires</b> salio ayer.",
+		Level:           correction.LevelMinimal,
+		ProtectedTokens: []string{"<b>Buenos Aires</b>"},
+	}
+	result := correction.Result{
+		RevisedText: "Su pedido <b>Buenos  Aires</b> salió ayer.",
+		Changes: []correction.Change{
+			{Kind: correction.KindSpelling, Original: "salio", Revised: "salió", Reason: "missing accent"},
+		},
+	}
 
-	if got := findingsOf(t, result); len(got) != 0 {
-		t.Fatalf("Verify() findings = %v, want none: the protected token survived with different whitespace", got)
+	got := correction.Verify(req, result)
+	if len(got) != 1 || got[0].Code != correction.CodeProtectedTokenLost {
+		t.Fatalf("Verify() findings = %+v, want one protected_token_lost: a token changed from the inside must not pass", got)
+	}
+	if !strings.Contains(got[0].Detail, "<b>Buenos Aires</b>") {
+		t.Fatalf("finding detail %q does not name the lost token", got[0].Detail)
+	}
+}
+
+func TestVerifyAcceptsAProtectedTokenWithDifferentSurroundingWhitespace(t *testing.T) {
+	req := correction.Request{
+		Text:            "Su pedido <b>Buenos Aires</b> salio ayer.",
+		Level:           correction.LevelMinimal,
+		ProtectedTokens: []string{"<b>Buenos Aires</b>"},
+	}
+	result := correction.Result{
+		RevisedText: "Su  pedido <b>Buenos Aires</b>\n  salió ayer.",
+		Changes: []correction.Change{
+			{Kind: correction.KindSpelling, Original: "salio", Revised: "salió", Reason: "missing accent"},
+		},
+	}
+
+	if got := correction.Verify(req, result); len(got) != 0 {
+		t.Fatalf("Verify() findings = %+v, want none: only the token's own bytes are compared", got)
 	}
 }
 
