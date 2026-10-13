@@ -113,14 +113,30 @@ const (
 	CodeMissingField Code = "missing_field"
 )
 
+// Agent configuration and call codes.
+const (
+	// CodeMissingAPIKey reports that no Gemini credential was configured.
+	CodeMissingAPIKey Code = "missing_api_key"
+	// CodeModelCallFailed reports that the agent could not reach or run the model.
+	CodeModelCallFailed Code = "model_call_failed"
+	// CodeUnverifiedDraft reports a decoded draft that failed verification.
+	CodeUnverifiedDraft Code = "unverified_draft"
+)
+
 // Error is a typed validation failure. Every error carries a Code for callers
-// and a Detail for humans, and the rendered message always names the code.
+// and a Detail for humans, and the rendered message always names the code. A
+// wrapped cause, when present, stays inspectable with errors.Is and errors.As.
 type Error struct {
 	Code   Code
 	Detail string
+	Cause  error
 }
 
 func (e *Error) Error() string { return string(e.Code) + ": " + e.Detail }
+
+// Unwrap exposes the underlying failure, so a model or client error survives a
+// typed wrap unchanged.
+func (e *Error) Unwrap() error { return e.Cause }
 
 // Finding is one deterministic verification problem. ChangeIndex is the index
 // of the offending change, or -1 for findings about the request or the draft as

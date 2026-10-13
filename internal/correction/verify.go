@@ -119,3 +119,18 @@ func kindNames() string {
 	}
 	return strings.Join(names, ", ")
 }
+
+// BlockedError reports a draft that decoded but failed deterministic
+// verification. The draft travels no further: an unverified revision is never
+// handed back as if it had been reviewed.
+type BlockedError struct {
+	Findings []Finding
+}
+
+func (e *BlockedError) Error() string {
+	codes := make([]string, 0, len(e.Findings))
+	for _, finding := range e.Findings {
+		codes = append(codes, string(finding.Code))
+	}
+	return fmt.Sprintf("%s: %d finding(s): %s", CodeUnverifiedDraft, len(e.Findings), strings.Join(codes, ", "))
+}
