@@ -29,6 +29,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Security
 
+- Every output write is checked: a run that cannot write the draft or the report exits `1` with
+  `output_write_failed` instead of reporting success for a truncated delivery.
 - Protected tokens are compared byte for byte, in the request and in the draft, so a token that changes
   from the inside is blocked instead of delivered.
 - `GOOGLE_API_KEY` is read from the environment only, is never written to disk, and `.gitignore`

@@ -59,12 +59,16 @@ changes (3):
 Text comes from the single argument, from `-file`, or from standard input — exactly one of them.
 Flags come before the text, following the Go `flag` package's convention.
 
+Every write is checked: if the draft or the report cannot reach the caller, the run exits `1` with
+`output_write_failed` instead of reporting success for a truncated delivery. The draft is written
+first, so a failure on the report leaves the draft on stdout with a non-zero exit.
+
 ## Exit codes
 
 | Code | Meaning |
 | --- | --- |
 | `0` | A verified draft was delivered |
-| `1` | The run failed: model error, undecodable response, or a blocked draft |
+| `1` | The run failed: model error, undecodable response, a blocked draft, or output that could not be written |
 | `2` | The invocation was wrong: bad flags, bad input, or an invalid request |
 
 ## JSON output

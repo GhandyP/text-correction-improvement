@@ -123,6 +123,13 @@ const (
 	CodeUnverifiedDraft Code = "unverified_draft"
 )
 
+// Output codes.
+const (
+	// CodeOutputWriteFailed reports that the draft or the report did not reach
+	// the caller, so the run must not claim success.
+	CodeOutputWriteFailed Code = "output_write_failed"
+)
+
 // Error is a typed validation failure. Every error carries a Code for callers
 // and a Detail for humans, and the rendered message always names the code. A
 // wrapped cause, when present, stays inspectable with errors.Is and errors.As.

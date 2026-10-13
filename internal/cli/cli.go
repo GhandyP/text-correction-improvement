@@ -10,6 +10,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -101,7 +102,13 @@ func Run(ctx context.Context, build BuildFunc, args []string, stdin io.Reader, s
 		return ExitFailure
 	}
 
-	emit(stdout, stderr, *asJSON, result)
+	if err := emit(stdout, stderr, *asJSON, result); err != nil {
+		// The draft or the report never reached the caller: a run that cannot
+		// deliver its output must not report success. The failure report itself
+		// stays best-effort, because the writer that just failed is stderr.
+		report(stderr, *asJSON, err)
+		return ExitFailure
+	}
 	return ExitOK
 }
 
@@ -139,7 +146,9 @@ func requireText(text string) (string, error) {
 
 // emit prints the verified draft. Text mode keeps the deliverable alone on
 // stdout and sends the review report to stderr, so the draft stays pipeable.
-func emit(stdout, stderr io.Writer, asJSON bool, result correction.Result) {
+// Every write is checked: a delivery that never reached the caller is a
+// failure, not a success.
+func emit(stdout, stderr io.Writer, asJSON bool, result correction.Result) error {
 	if asJSON {
 		payload := resultPayload{
 			Corrected: result.RevisedText,
@@ -154,26 +163,36 @@ func emit(stdout, stderr io.Writer, asJSON bool, result correction.Result) {
 				Reason:   change.Reason,
 			})
 		}
-		writeJSON(stdout, payload)
-		return
+		return writeJSON(stdout, "the draft", payload)
 	}
 
-	fmt.Fprintln(stdout, result.RevisedText)
+	if err := writeText(stdout, "the draft", result.RevisedText+"\n"); err != nil {
+		return err
+	}
+	return writeText(stderr, "the report", reportText(result))
+}
+
+// reportText renders the review report: every change with its reason, then the
+// questions the agent would rather ask than guess.
+func reportText(result correction.Result) string {
+	var b strings.Builder
 
 	if len(result.Changes) == 0 {
-		fmt.Fprintln(stderr, "no changes: the text was already correct.")
+		b.WriteString("no changes: the text was already correct.\n")
 	} else {
-		fmt.Fprintf(stderr, "changes (%d):\n", len(result.Changes))
+		fmt.Fprintf(&b, "changes (%d):\n", len(result.Changes))
 		for index, change := range result.Changes {
-			fmt.Fprintf(stderr, "  %d. [%s] %q -> %q - %s\n", index+1, change.Kind, change.Original, change.Revised, change.Reason)
+			fmt.Fprintf(&b, "  %d. [%s] %q -> %q - %s\n", index+1, change.Kind, change.Original, change.Revised, change.Reason)
 		}
 	}
 	if len(result.Questions) > 0 {
-		fmt.Fprintf(stderr, "questions (%d):\n", len(result.Questions))
+		fmt.Fprintf(&b, "questions (%d):\n", len(result.Questions))
 		for index, question := range result.Questions {
-			fmt.Fprintf(stderr, "  %d. %s\n", index+1, question)
+			fmt.Fprintf(&b, "  %d. %s\n", index+1, question)
 		}
 	}
+
+	return b.String()
 }
 
 // report explains a failure. Text mode prints the typed error and every
@@ -193,7 +212,9 @@ func report(stderr io.Writer, asJSON bool, err error) {
 				})
 			}
 		}
-		writeJSON(stderr, payload)
+		// Best effort: the writer that just failed is stderr itself, so there is
+		// nowhere left to report a second failure.
+		_ = writeJSON(stderr, "the error report", payload)
 		return
 	}
 
@@ -266,11 +287,34 @@ type findingPayload struct {
 	Detail      string `json:"detail"`
 }
 
-func writeJSON(w io.Writer, payload any) {
-	encoder := json.NewEncoder(w)
+// writeJSON encodes payload and writes it, turning a write failure into a
+// typed error instead of dropping it.
+func writeJSON(w io.Writer, what string, payload any) error {
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
 	encoder.SetIndent("", "  ")
 	encoder.SetEscapeHTML(false)
-	_ = encoder.Encode(payload)
+	if err := encoder.Encode(payload); err != nil {
+		return &correction.Error{
+			Code:   correction.CodeOutputWriteFailed,
+			Detail: fmt.Sprintf("encoding %s failed: %v", what, err),
+			Cause:  err,
+		}
+	}
+	return writeText(w, what, buf.String())
+}
+
+// writeText writes text and turns any failure into a typed error, so no caller
+// can claim success for output that never arrived.
+func writeText(w io.Writer, what, text string) error {
+	if _, err := io.WriteString(w, text); err != nil {
+		return &correction.Error{
+			Code:   correction.CodeOutputWriteFailed,
+			Detail: fmt.Sprintf("writing %s failed: %v", what, err),
+			Cause:  err,
+		}
+	}
+	return nil
 }
 
 type stringList []string

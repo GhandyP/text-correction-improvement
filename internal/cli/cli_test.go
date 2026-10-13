@@ -3,6 +3,7 @@ package cli_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,6 +13,57 @@ import (
 	"github.com/GhandyP/text-correction-improvement/internal/cli"
 	"github.com/GhandyP/text-correction-improvement/internal/correction"
 )
+
+// failingWriter rejects every write, standing in for a full disk or a pipe that
+// the reader already closed.
+type failingWriter struct{ err error }
+
+func (w failingWriter) Write([]byte) (int, error) { return 0, w.err }
+
+func TestRunFailsWhenTheDraftCannotBeWritten(t *testing.T) {
+	f := &fakeCorrector{result: verifiedResult()}
+	var stderr strings.Builder
+
+	code := cli.Run(context.Background(), builder(f, nil, nil), []string{"Mira, el nene corrio."},
+		strings.NewReader(""), failingWriter{err: errors.New("device full")}, &stderr)
+
+	if code != cli.ExitFailure {
+		t.Fatalf("exit code = %d, want %d when the draft cannot be written", code, cli.ExitFailure)
+	}
+	if !strings.Contains(stderr.String(), string(correction.CodeOutputWriteFailed)) {
+		t.Errorf("stderr = %q, want it to name %s", stderr.String(), correction.CodeOutputWriteFailed)
+	}
+}
+
+func TestRunFailsWhenTheReportCannotBeWritten(t *testing.T) {
+	f := &fakeCorrector{result: verifiedResult()}
+	var stdout strings.Builder
+
+	code := cli.Run(context.Background(), builder(f, nil, nil), []string{"Mira, el nene corrio."},
+		strings.NewReader(""), &stdout, failingWriter{err: errors.New("stderr closed")})
+
+	if code != cli.ExitFailure {
+		t.Fatalf("exit code = %d, want %d when the report cannot be written", code, cli.ExitFailure)
+	}
+	if !strings.Contains(stdout.String(), "corrió") {
+		t.Errorf("stdout = %q, want the draft: it is written before the report", stdout.String())
+	}
+}
+
+func TestRunFailsWhenTheJSONDraftCannotBeWritten(t *testing.T) {
+	f := &fakeCorrector{result: verifiedResult()}
+	var stderr strings.Builder
+
+	code := cli.Run(context.Background(), builder(f, nil, nil), []string{"-json", "Mira, el nene corrio."},
+		strings.NewReader(""), failingWriter{err: errors.New("device full")}, &stderr)
+
+	if code != cli.ExitFailure {
+		t.Fatalf("exit code = %d, want %d when the JSON draft cannot be written", code, cli.ExitFailure)
+	}
+	if !strings.Contains(stderr.String(), string(correction.CodeOutputWriteFailed)) {
+		t.Errorf("stderr = %q, want it to name %s", stderr.String(), correction.CodeOutputWriteFailed)
+	}
+}
 
 type fakeCorrector struct {
 	calls  int
