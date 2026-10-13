@@ -85,7 +85,7 @@ Commit identities are recorded as evidence once each task lands; they are never 
 | T3 | Response schema plus strict JSON decode (unknown and missing fields rejected) with RED tests | S7, S11 | inline | `7f0bdd7` |
 | T4 | `internal/agent`: ADK Go v2 Gemini agent, one document per session, no tools, injectable generate seam, instruction contract tests, `adk/v2` pinned | S2, S7, S11 | inline | `681bce8` |
 | T5 | `internal/cli`: flags (`-file`, `-json`, `-language`, `-audience`, `-level`, `-protect`, `-model`), stdin/file/argument input, text and JSON output, exit codes, RED tests | S7, S8, S10 | inline | `444fecc` |
-| T6 | Fixtures and golden model responses: already-correct no-op, informal voice, markup and placeholders, multilingual, lost protected token | S8, S10, S11 | inline | pending |
+| T6 | Fixtures and golden model responses: already-correct no-op, informal voice, markup and placeholders, multilingual, lost protected token | S8, S10, S11 | inline | `d0aa640` |
 | T7 | Honest README rewrite, Makefile, CI workflow (gofmt, vet, build, test), CHANGELOG | S4, S8, S9 | inline | pending |
 | T8 | Publish: `gh repo create --public`, `origin`, push, verify visibility and that the remote tree equals local `HEAD` | S3 | inline | pending |
 | T9 | Close: RDD assess over the candidate, execute its plan, final report with the risk line | S1-S12 | assess | pending |
@@ -214,7 +214,7 @@ clean. Smoke tests on the built binary: no credential → `missing_api_key` and 
 stdout and exit 0; `-level bogus` → `usage error: unknown level "bogus"; use minimal or moderate`
 and exit 2.
 
-L20 — evidence (T6). Six cases live in `internal/agent/testdata/cases`: already-correct,
+L20 — evidence (T6). Commit `d0aa640`. Six cases live in `internal/agent/testdata/cases`: already-correct,
 informal-voice (the guide's fast test: spelling, agreement, and a deliberate informal phrase),
 placeholders-markup, multilingual, ambiguous-tone, and protected-token-lost as the one blocked case.
 Each replay builds the request from `input.txt` and `request.json`, feeds `model.json` through the
@@ -223,3 +223,14 @@ which the strict decoder re-reads so no fixture can describe a draft the pipelin
 produced. The first run failed on placeholders-markup because `printf` had eaten the `%s` while the
 fixture was being written; the pipeline rejected the request with `protected_token_not_in_text`,
 which is the test doing its job on its own fixture. Fixed, then the whole suite is green.
+
+L21 — decision (T7). The README states what works and what does not: the automated suite covers
+everything except the live model call, which needs a key and stays a manual step. The
+flags-after-the-text limitation is documented instead of hidden, because the Go `flag` package stops
+at the first positional argument. CI mirrors `make check` — gofmt, vet, build, test — so a local pass
+is the same gate the repository runs.
+
+L22 — evidence (T7). `make check` exited 0 with gofmt clean, vet clean, build clean and the suite
+green; `.github/workflows/ci.yml` parses as YAML; the Makefile has 12 real tab-indented recipe lines.
+The first README draft showed a flag-after-text invocation that the Go `flag` package would reject as
+extra positional arguments; both the example and a new sentence now say flags come before the text.
